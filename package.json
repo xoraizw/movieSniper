@@ -1,15 +1,15 @@
 {
-  "homepage": "https://xoraizw.github.io/movieSniper/",
+  "homepage": "https://xoraizw.github.io/movieSniper",
   "name": "moviesniper",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite dist",
+    "build": "tsc -b && vite build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
-    "predeploy": "npm run dist",
+    "predeploy": "npm run build",
     "deploy": "gh-pages -d dist"
   },
   "dependencies": {

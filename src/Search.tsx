@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Input } from "@/components/ui/input";
 import { useNavigate } from 'react-router-dom';
 import './Search.css'; // Create this CSS file for styling the dropdown
-import { faArrowLeft, faSpinner, faHome } from '@fortawesome/free-solid-svg-icons';
+import { faSpinner } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 "use client"
 

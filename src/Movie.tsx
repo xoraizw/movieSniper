@@ -5,7 +5,7 @@ import Slider from './Slider'; // Use the custom slider component
 import Button from 'react-bootstrap/Button';
 import './Movie.css'; // Ensure your CSS file is imported
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowLeft, faSpinner, faHome } from '@fortawesome/free-solid-svg-icons';
+import { faArrowLeft, faSpinner } from '@fortawesome/free-solid-svg-icons';
 
 const availableGenres = [
   "Action", "Adventure", "Animation", "Biography", "Comedy", "Crime", "Documentary", "Drama",

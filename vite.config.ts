@@ -5,9 +5,9 @@ import { defineConfig } from "vite"
 export default defineConfig({
   base: '/movieSniper/',  // Set this to your repository name
   plugins: [react()],
-  // resolve: {
-  //   alias: {
-  //     "@": path.resolve(__dirname, "./src"),
-  //   },
-  // },
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
+    },
+  },
 })

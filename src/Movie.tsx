@@ -1,11 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { Search, Film, Sliders, ThumbsUp, Zap, ExternalLink, Sparkles, Brain, User, ArrowLeft, Clock, Calendar, Users, Star, ChevronDown } from 'lucide-react';
 import Header from './Header';
-import Slider from './Slider'; // Use the custom slider component
-import Button from 'react-bootstrap/Button';
-import './Movie.css'; // Ensure your CSS file is imported
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowLeft, faSpinner } from '@fortawesome/free-solid-svg-icons';
+import FilmLogo from './film.png'
 
 const availableGenres = [
   "Action", "Adventure", "Animation", "Biography", "Comedy", "Crime", "Documentary", "Drama",
@@ -38,6 +35,24 @@ const initialGenreIntensities = availableGenres.reduce<{ [key: string]: number }
   return acc;
 }, {});
 
+const TMDB_API_KEY = 'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIxNzFhNWZjNWJkYjQyY2FmZDdmNGY0ZTU4ZWQ1MTYyNCIsIm5iZiI6MTcyNjM5Njc0OC4zMTk1MTUsInN1YiI6IjY0ZDM0YTk5ZDEwMGI2MDBmZjA4ODAzMSIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.IF3urSIFDzzNzh1jLOvBKQXNL9x5dFRkPmTqvWzzT38';
+
+const fetchTMDBPoster = async (imdbID: string) => {
+  try {
+    const response = await fetch(`https://api.themoviedb.org/3/find/${imdbID}?api_key=${TMDB_API_KEY}&external_source=imdb_id`);
+    const data = await response.json();
+    if (data && data.movie_results && data.movie_results.length > 0) {
+      const movie = data.movie_results[0];
+      const posterPath = movie.poster_path;
+      return `https://image.tmdb.org/t/p/original${posterPath}`; // Use original size
+    }
+  } catch (error) {
+    console.error('Error fetching TMDB poster:', error);
+  }
+  return null;
+};
+
+
 const MovieDetails: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -49,6 +64,7 @@ const MovieDetails: React.FC = () => {
   const [recommendations, setRecommendations] = useState<RecommendedMovie[]>([]);
   const [loadingRecommendations, setLoadingRecommendations] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [posterURL, setPosterURL] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchMovieDetails = async (imdbID: string) => {
@@ -60,6 +76,10 @@ const MovieDetails: React.FC = () => {
           const genres = data.Genre.split(', ').map((genre: string) => genre.trim());
           setMovieGenres(genres);
           setRemainingGenres(availableGenres.filter((genre) => !genres.includes(genre)));
+          
+          // Fetch high-quality poster from TMDB
+          const tmdbPosterURL = await fetchTMDBPoster(imdbID);
+          setPosterURL(tmdbPosterURL);
         }
       } catch (error) {
         console.error('Error fetching movie details:', error);
@@ -72,7 +92,6 @@ const MovieDetails: React.FC = () => {
       fetchMovieDetails(movieData.imdbID);
     }
   }, [location.state]);
-
   const handleSliderChange = (genre: string, value: number) => {
     setGenreIntensities(prev => {
       const updatedIntensities = { ...prev, [genre]: value };
@@ -143,87 +162,201 @@ const MovieDetails: React.FC = () => {
     window.location.reload();
   };
 
-  if (loading) return <div className="loading-animation">
-  <FontAwesomeIcon icon={faSpinner} spin size="2x" />
-</div>;
-  if (!movie) return <div>Movie not found</div>;
+  const genreIntensityRef = useRef<HTMLDivElement>(null);
+
+  const scrollToGenreIntensity = () => {
+    genreIntensityRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  if (loading) return (
+    <div className="flex items-center justify-center h-screen bg-gray-900">
+      <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-yellow-500"></div>
+    </div>
+  );
+
+  if (!movie) return <div className="text-white">Movie not found</div>;
+
   return (
-    <div className="movie-details">
-      <Header />
-      <FontAwesomeIcon icon={faArrowLeft} className="back-icon" onClick={() => navigate('/')} />
-      <div className="movie-info">
-        <img src={movie.Poster} alt={movie.Title} className="movie-poster" />
-        <div className="movie-details-text">
-          <h2>{movie.Title}</h2>
-          <p><strong>Description:</strong> {movie.Plot}</p>
-          <p><strong>Release Date:</strong> {movie.Year}</p>
-          <p><strong>Runtime:</strong> {movie.Runtime}</p>
-          <p><strong>Genres:</strong> {movie.Genre}</p>
-          <p><strong>Actors:</strong> {movie.Actors}</p>
-          <a href={`https://www.imdb.com/title/${movie.imdbID}`} target="_blank" rel="noopener noreferrer">
-            View on IMDb
-          </a>
+    <>
+      <header className="relative z-50 container mx-auto px-4 py-3 flex items-center bg-gray-900 text-white">
+      <button
+        onClick={() => window.history.back()}
+        className="flex items-center text-yellow-500 hover:text-yellow-600 transition-colors duration-300 mr-4"
+      >
+        <ArrowLeft className="w-6 h-6" />
+      </button>
+      <div className="flex justify-between w-full items-center">
+        <div className="flex items-center space-x-0">
+          <img src={FilmLogo} alt="movieSniper logo" className="w-12 h-12" />
+          <div className="text-2xl font-bold text-yellow-500"> <a href="/" className="flex items-center hover:text-yellow-500 space-x-2 transition-colors duration-300"> movieSniper </a> </div>
         </div>
+        
+        <nav>
+          <ul className="flex space-x-4">
+            <li>
+              <a
+                href="/aboutme"
+                className="flex items-center hover:text-yellow-500 space-x-2 transition-colors duration-300"
+              >
+                <User className="w-5 h-5" />
+                <span>About Me</span>
+              </a>
+            </li>
+          </ul>
+        </nav>
       </div>
-      <div className="genre-section">
-        <h3>Genre Intensity</h3>
-        <div className="genre-list">
-          {movieGenres.map((genre) => (
-            <div key={genre} className="genre-item">
-              <span>{genre}</span>
-              <Slider
-                value={genreIntensities[genre] || 0}
-                onChange={(value) => handleSliderChange(genre, value)}
-                min={0}
-                max={3}
-                step={1}
-              />
-              <div className="slider-labels">
-                <span>Low</span>
-                <span>Neutral</span>
-                <span>High</span>
-              </div>
+    </header>
+
+    <div className="min-h-screen bg-gray-900 text-white">
+      <div className="container mx-auto px-4 py-8">
+        
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="md:col-span-1">
+            <img src={movie.Poster} alt={movie.Title} className="w-full rounded-lg shadow-lg" />
+          </div>
+          <div className="md:col-span-2">
+            <h1 className="text-4xl font-bold mb-4 text-yellow-500">{movie.Title}</h1>
+            <div className="flex flex-wrap gap-4 mb-4">
+              <Badge icon={<Calendar className="mr-1" />} text={movie.Year} />
+              <Badge icon={<Clock className="mr-1" />} text={movie.Runtime} />
             </div>
-          ))}
+            <p className="text-lg mb-4">{movie.Plot}</p>
+            <div className="mb-4">
+              <strong className="font-semibold text-yellow-500">
+                <Users className="inline mr-2" />
+                Cast:
+              </strong> {movie.Actors}
+            </div>
+            <div className="mb-4">
+              <strong className="font-semibold text-yellow-500">
+                <Film className="inline mr-2" />
+                Genres:
+              </strong> {movie.Genre}
+            </div>
+            <div className="flex items-center gap-4 mb-4">
+              <a
+                href={`https://www.imdb.com/title/${movie.imdbID}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center bg-yellow-500 text-gray-900 px-6 py-2 rounded-full font-semibold hover:bg-yellow-600 transition duration-300"
+              >
+                <ExternalLink className="mr-2" size={20} />
+                <span>View on IMDb</span>
+              </a>
+              <button
+                onClick={scrollToGenreIntensity}
+                className="inline-flex items-center bg-yellow-500 text-gray-900 px-6 py-2 rounded-full font-semibold hover:bg-yellow-600 transition duration-300"
+              >
+                <span>Get Recommendations</span>
+              </button>
+            </div>
+
+          </div>
         </div>
-      </div>
-      <div className="genre-grid">
-        {remainingGenres.map((genre) => (
-          <Button
-            key={genre}
-            variant={movieGenres.includes(genre) ? "primary" : "secondary"}
-            onClick={() => handleGenreClick(genre)}
-            className="genre-button"
+
+        <div ref={genreIntensityRef} className="mt-12 bg-gray-800 rounded-lg p-6 shadow-lg">
+          <h2 className="text-2xl font-bold mb-6 text-yellow-500 flex items-center">
+            <Sliders className="mr-2" />
+            Genre Intensity
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {movieGenres.map((genre) => (
+              <GenreSlider
+                key={genre}
+                genre={genre}
+                intensity={genreIntensities[genre]}
+                onSliderChange={handleSliderChange}
+              />
+            ))}
+          </div>
+          <div className="flex flex-wrap mt-4 gap-2">
+            {remainingGenres.map((genre) => (
+              <button
+                key={genre}
+                className="bg-yellow-500 text-gray-900 px-4 py-2 rounded-full font-semibold hover:bg-yellow-600 transition duration-300"
+                onClick={() => handleGenreClick(genre)}
+              >
+                {genre}
+              </button>
+            ))}
+          </div>
+          <div className="mt-8">
+            <button
+              onClick={handleRecommend}
+              className="bg-yellow-500 text-gray-900 px-6 py-3 rounded-full font-bold hover:bg-yellow-600 transition duration-300 flex items-center"
+            >
+              <Sparkles className="mr-2" />
+              Generate Recommendations
+            </button>
+            {loadingRecommendations && <p className="text-yellow-500 mt-4">Loading recommendations...</p>}
+            {error && <p className="text-red-500 mt-4">{error}</p>}
+          </div>
+        </div>
+
+        {recommendations.length > 0 && (
+          <div className="mt-12">
+            <h2 className="text-2xl font-bold mb-6 text-yellow-500">Recommended Movies</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {recommendations.map((movie) => (
+          <div
+            key={movie.imdbID}
+            className="bg-gray-800 rounded-lg p-4 cursor-pointer shadow-lg hover:shadow-xl transition duration-300"
+            onClick={() => handleMovieClick(movie)}
           >
-            {genre}
-          </Button>
+            <div className="h-96 w-full mb-4 relative">
+              <img
+                src={movie.cover}
+                alt={movie.title}
+                className="w-full h-full object-contain rounded-lg"
+              />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-yellow-500">{movie.title}</h3>
+              <p className="text-sm text-gray-400">{movie.runtime} • {movie.year}</p>
+            </div>
+          </div>
         ))}
       </div>
-      <div className="recommendations-section">
-        <h3>Recommendations</h3>
-        <Button onClick={handleRecommend} className="genre-button">Get Recommendations</Button>
-        {loadingRecommendations ? (
-          <div className="loading-animation">
-            <FontAwesomeIcon icon={faSpinner} spin size="2x" />
-          </div>
-        ) : error ? (
-          <div className="error-message">{error}</div>
-        ) : (
-          <div className="card-container">
-            {recommendations.map((rec) => (
-              <div key={rec.imdbID} className="card" onClick={() => handleMovieClick(rec)}>
-                <img src={rec.cover} alt={rec.title} className="card-img" />
-                <div className="card-info">
-                  <h4 className="card-title">{rec.title}</h4>
-                  <p className="card-runtime">{rec.runtime}</p>
-                  <p className="card-year">{rec.year}</p>
-                </div>
-              </div>
-            ))}
+
           </div>
         )}
       </div>
     </div>
+    </>
   );
 };
+
+const Badge: React.FC<{ icon: React.ReactNode; text: string }> = ({ icon, text }) => (
+  <div className="inline-flex items-center bg-gray-800 text-gray-400 px-3 py-1 rounded-full text-sm">
+    {icon}
+    <span>{text}</span>
+  </div>
+);
+
+const GenreSlider: React.FC<{
+  genre: string;
+  intensity: number;
+  onSliderChange: (genre: string, value: number) => void;
+}> = ({ genre, intensity, onSliderChange }) => (
+  <div className="p-4 bg-gray-800 rounded-lg shadow-lg">
+    <div className="flex justify-between items-center mb-2">
+      <strong className="text-yellow-500">{genre}</strong>
+      <span className="text-gray-400">{intensity}</span>
+    </div>
+    <input
+      type="range"
+      min="-3"
+      max="3"
+      value={intensity}
+      onChange={(e) => onSliderChange(genre, Number(e.target.value))}
+      className="w-full"
+    />
+    <div className="flex justify-between text-xs text-gray-400 mt-1">
+      <span>Low Intensity</span>
+      <span>High Intensity</span>
+    </div>
+  </div>
+);
+
 export default MovieDetails;

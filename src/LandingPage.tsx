@@ -1,10 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Search } from 'lucide-react';
 import Header from './Header';
 import HeroSection from './HeroSection.tsx';
-import FeaturesSection from './FeaturesSection.tsx';
 import HowItWorksSection from './HowItWorksSection.tsx';
-import AboutMeSection from './AboutMeSection.tsx';
 import CTASection from './CTASection.tsx';
 import Footer from './Footer.tsx';
 

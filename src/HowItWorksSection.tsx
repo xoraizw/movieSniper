@@ -1,6 +1,6 @@
 import React from 'react';
 import FeatureCard from './FeatureCard';
-import { Film, Search, Sparkles, PenLine , Sliders, Brain, ShieldQuestion  } from 'lucide-react';
+import { Search, PenLine , Sliders, ShieldQuestion  } from 'lucide-react';
 
 const HowItWorksSection: React.FC = () => (
   <section id="how-it-works" className="py-10 flex items-center">

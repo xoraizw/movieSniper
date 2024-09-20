@@ -13,20 +13,24 @@ interface Movie {
   imdbID: string;
 }
 
-const HeroSection: React.FC<{ popularMovies: string[] }> = ({ popularMovies }) => {
-  const [searchQuery, setSearchQuery] = useState('');
+interface HeroSectionProps {
+  handleSearch: (e: React.FormEvent) => void;
+  searchQuery: string;
+  setSearchQuery: React.Dispatch<React.SetStateAction<string>>;
+  offset: number;
+  popularMovies: string[];
+}
+
+const HeroSection: React.FC<HeroSectionProps> = ({
+  handleSearch,
+  searchQuery,
+  setSearchQuery,
+  offset,
+  popularMovies
+}) => {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(false);
-  const [offset, setOffset] = useState(0);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const intervalId = setInterval(() => {
-      setOffset((prevOffset) => (prevOffset + 1) % 200);
-    }, 50);
-
-    return () => clearInterval(intervalId);
-  }, []);
 
   useEffect(() => {
     const fetchMovies = async () => {
@@ -58,10 +62,6 @@ const HeroSection: React.FC<{ popularMovies: string[] }> = ({ popularMovies }) =
 
   const handleMovieClick = (movie: Movie) => {
     navigate('/movie', { state: { imdbID: movie.imdbID } });
-  };
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
   };
 
   return (
@@ -141,7 +141,9 @@ const HeroSection: React.FC<{ popularMovies: string[] }> = ({ popularMovies }) =
             )}
           </form>
         </div>
-        <div className="mb-16"></div> 
+
+        <div className="mb-16"></div>
+
         {/* Features Section */}
         <section id="features" className="bg-gray-800 py-20 relative z-0">
           <div className="container mx-auto px-4">

@@ -1,5 +1,4 @@
 import React from 'react';
-import { Search, Film, Sliders, ThumbsUp, Zap, ExternalLink, Sparkles, Brain, User, ArrowLeft, Clock, Calendar, Users, Star, ChevronDown } from 'lucide-react';
 
 const CTASection: React.FC = () => (
   <section className="bg-yellow-500 py-20">

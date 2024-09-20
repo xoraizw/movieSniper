@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Sparkles, Sliders, User } from 'lucide-react';
-import movieSniperLogo from './movieSniper.png'
 import Film from './film.png'
 
 const Header: React.FC = () => {

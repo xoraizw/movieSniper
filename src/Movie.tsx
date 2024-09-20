@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Search, Film, Sliders, ThumbsUp, Zap, ExternalLink, Sparkles, Brain, User, ArrowLeft, Clock, Calendar, Users, Star, ChevronDown } from 'lucide-react';
-import Header from './Header';
+import { Film, Sliders, ExternalLink, Sparkles, User, ArrowLeft, Clock, Calendar, Users} from 'lucide-react';
 import FilmLogo from './film.png'
 
 const availableGenres = [
@@ -35,23 +34,6 @@ const initialGenreIntensities = availableGenres.reduce<{ [key: string]: number }
   return acc;
 }, {});
 
-const TMDB_API_KEY = 'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIxNzFhNWZjNWJkYjQyY2FmZDdmNGY0ZTU4ZWQ1MTYyNCIsIm5iZiI6MTcyNjM5Njc0OC4zMTk1MTUsInN1YiI6IjY0ZDM0YTk5ZDEwMGI2MDBmZjA4ODAzMSIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.IF3urSIFDzzNzh1jLOvBKQXNL9x5dFRkPmTqvWzzT38';
-
-const fetchTMDBPoster = async (imdbID: string) => {
-  try {
-    const response = await fetch(`https://api.themoviedb.org/3/find/${imdbID}?api_key=${TMDB_API_KEY}&external_source=imdb_id`);
-    const data = await response.json();
-    if (data && data.movie_results && data.movie_results.length > 0) {
-      const movie = data.movie_results[0];
-      const posterPath = movie.poster_path;
-      return `https://image.tmdb.org/t/p/original${posterPath}`; // Use original size
-    }
-  } catch (error) {
-    console.error('Error fetching TMDB poster:', error);
-  }
-  return null;
-};
-
 
 const MovieDetails: React.FC = () => {
   const location = useLocation();
@@ -64,7 +46,6 @@ const MovieDetails: React.FC = () => {
   const [recommendations, setRecommendations] = useState<RecommendedMovie[]>([]);
   const [loadingRecommendations, setLoadingRecommendations] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [posterURL, setPosterURL] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchMovieDetails = async (imdbID: string) => {
@@ -76,10 +57,6 @@ const MovieDetails: React.FC = () => {
           const genres = data.Genre.split(', ').map((genre: string) => genre.trim());
           setMovieGenres(genres);
           setRemainingGenres(availableGenres.filter((genre) => !genres.includes(genre)));
-          
-          // Fetch high-quality poster from TMDB
-          const tmdbPosterURL = await fetchTMDBPoster(imdbID);
-          setPosterURL(tmdbPosterURL);
         }
       } catch (error) {
         console.error('Error fetching movie details:', error);

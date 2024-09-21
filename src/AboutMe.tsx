@@ -1,6 +1,7 @@
-import React from 'react';
-import { User, Mail, Github, Linkedin, Film, Code, BookOpen } from 'lucide-react';
-import FilmLogo from './film.png'
+import React, { useState, useEffect, useRef } from 'react';
+import { User, Mail, Github, Linkedin, Code, BookOpen, Globe, Home } from 'lucide-react'; // Import the Home icon
+import FilmLogo from './film.png';
+import ProfilePic from './pic-2.jpg';
 
 const scrollToSection = (id: string) => {
   const element = document.getElementById(id);
@@ -10,17 +11,68 @@ const scrollToSection = (id: string) => {
 };
 
 const AboutMePage: React.FC = () => {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    if (isMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    } else {
+      document.removeEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isMenuOpen]);
+
   return (
     <div className="min-h-screen bg-gray-900 text-white">
       {/* Header */}
-      <header className="container mx-auto px-4 py-3 flex justify-between items-center">
-      <div className="flex items-center space-x-0">
+      <header className="relative z-10 container mx-auto px-4 py-3 flex justify-between items-center bg-gray-900 text-white">
+        <div className="flex items-center space-x-0">
           <img src={FilmLogo} alt="movieSniper logo" className="w-12 h-12" />
-          <div className="text-2xl font-bold text-yellow-500"> <a href="/" className="flex items-center hover:text-yellow-500 space-x-2 transition-colors duration-300"> movieSniper </a> </div>
+          <div className="text-2xl font-bold text-yellow-500">
+            <a href="/" className="flex items-center hover:text-yellow-500 space-x-2 transition-colors duration-300"> movieSniper </a>
+          </div>
         </div>
-        <nav>
-          <ul className="flex space-x-4">
-            <li><a href="/" className="hover:text-yellow-500">Home</a></li>
+
+        {/* Mobile Menu Button */}
+        <button
+          className="md:hidden flex items-center text-yellow-500 hover:text-yellow-600"
+          onClick={() => setIsMenuOpen(!isMenuOpen)}
+        >
+          <span className="sr-only">Open main menu</span>
+          <svg
+            className="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+
+        {/* Desktop Navigation */}
+        <nav className="hidden md:flex md:items-center md:space-x-8">
+          <ul className="flex items-center space-x-8">
+            <li>
+              <a
+                href="/"
+                className="flex items-center hover:text-yellow-500 space-x-2"
+              >
+                <Home />
+                <span>Home</span>
+              </a>
+            </li>
             <li>
               <a
                 href="#about"
@@ -28,9 +80,10 @@ const AboutMePage: React.FC = () => {
                   e.preventDefault();
                   scrollToSection('about');
                 }}
-                className="hover:text-yellow-500"
+                className="flex items-center hover:text-yellow-500 space-x-2"
               >
-                About
+                <User /> 
+                <span>About</span>
               </a>
             </li>
             <li>
@@ -40,9 +93,10 @@ const AboutMePage: React.FC = () => {
                   e.preventDefault();
                   scrollToSection('skills');
                 }}
-                className="hover:text-yellow-500"
+                className="flex items-center hover:text-yellow-500 space-x-2"
               >
-                Skills
+                <Code /> 
+                <span>Skills</span>
               </a>
             </li>
             <li>
@@ -52,9 +106,71 @@ const AboutMePage: React.FC = () => {
                   e.preventDefault();
                   scrollToSection('contact');
                 }}
-                className="hover:text-yellow-500"
+                className="flex items-center hover:text-yellow-500 space-x-2"
               >
-                Contact
+                <Mail /> 
+                <span>Contact</span>
+              </a>
+            </li>
+          </ul>
+        </nav>
+
+        {/* Mobile Navigation */}
+        <nav
+          ref={menuRef}
+          className={`md:hidden absolute top-full left-0 w-full bg-gray-900 bg-opacity-80 ${isMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible'}`}
+        >
+          <ul className="flex flex-col items-center space-y-4 p-4">
+            <li>
+              <a
+                href="/"
+                className="flex items-center hover:text-yellow-500 space-x-2"
+                onClick={() => setIsMenuOpen(false)} // Close menu on link click
+              >
+                <Home />
+                <span>Home</span>
+              </a>
+            </li>
+            <li>
+              <a
+                href="#about"
+                onClick={(e) => {
+                  e.preventDefault();
+                  scrollToSection('about');
+                  setIsMenuOpen(false); // Close menu after click
+                }}
+                className="flex items-center hover:text-yellow-500 space-x-2"
+              >
+                <User />
+                <span>About</span>
+              </a>
+            </li>
+            <li>
+              <a
+                href="#skills"
+                onClick={(e) => {
+                  e.preventDefault();
+                  scrollToSection('skills');
+                  setIsMenuOpen(false); // Close menu after click
+                }}
+                className="flex items-center hover:text-yellow-500 space-x-2"
+              >
+                <Code />
+                <span>Skills</span>
+              </a>
+            </li>
+            <li>
+              <a
+                href="#contact"
+                onClick={(e) => {
+                  e.preventDefault();
+                  scrollToSection('contact');
+                  setIsMenuOpen(false); // Close menu after click
+                }}
+                className="flex items-center hover:text-yellow-500 space-x-2"
+              >
+                <Mail />
+                <span>Contact</span>
               </a>
             </li>
           </ul>
@@ -63,12 +179,20 @@ const AboutMePage: React.FC = () => {
 
       {/* Hero Section */}
       <section className="py-20 bg-gray-800">
-        <div className="container mx-auto px-4 text-center">
-          <div className="mb-8">
-            <img src="/api/placeholder/200/200" alt="Your Name" className="rounded-full mx-auto" />
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col md:flex-row items-center">
+            <div className="mb-6 md:mb-0 md:mr-6">
+              <img 
+                src={ProfilePic} 
+                className="rounded-xl border-4 border-yellow-500 object-cover min-w-[10rem] min-h-[10rem] w-40 h-40" 
+                alt="Profile"
+              />
+            </div>
+            <div className="flex flex-col justify-center text-center md:text-left">
+              <h1 className="text-5xl font-bold mb-2">Ahmad Xoraiz Waheed</h1>
+              <p className="text-xl mb-8">CS @ LUMS'25 | Full stack developer | Machine Learning enthusiast</p>
+            </div>
           </div>
-          <h1 className="text-5xl font-bold mb-6">John Doe</h1>
-          <p className="text-xl mb-8">Creator of MovieSniper | AI Developer | Film Enthusiast</p>
         </div>
       </section>
 
@@ -80,19 +204,13 @@ const AboutMePage: React.FC = () => {
           </h2>
           <div className="max-w-3xl mx-auto">
             <p className="text-lg mb-6">
-              Hello! I'm John Doe, the creator of MovieSniper. As a passionate film enthusiast and AI developer, 
+              Hello! I'm Xoraiz, the creator of MovieSniper. As a passionate film enthusiast and AI developer, 
               I've combined my love for cinema with cutting-edge technology to bring you personalized movie 
               recommendations like never before.
             </p>
             <p className="text-lg mb-6">
-              With over 10 years of experience in machine learning and data science, I've developed MovieSniper 
-              to help fellow movie lovers discover hidden gems and reconnect with their favorite genres. My goal 
-              is to make every movie night an unforgettable experience.
-            </p>
-            <p className="text-lg mb-6">
-              When I'm not working on improving MovieSniper, you can find me attending film festivals, discussing 
-              classic movies with friends, or exploring new AI technologies. I'm constantly inspired by the 
-              intersection of art and technology, and I strive to bring that passion to every project I work on.
+              With the power of LLMs and an extensive dataset of movies, I've developed MovieSniper 
+              to help fellow movie lovers discover hidden gems and reconnect with their favorite genres.
             </p>
           </div>
         </div>
@@ -106,19 +224,19 @@ const AboutMePage: React.FC = () => {
           </h2>
           <div className="grid md:grid-cols-3 gap-8">
             <SkillCard
-              icon={<Film size={40} />}
-              title="Film Analysis"
-              description="Deep understanding of film theory, genres, and cinematic techniques."
+              icon={<Globe size={40} />}
+              title="Web Development"
+              description="Expertise in Full stack web-development using popular frameworks."
             />
             <SkillCard
               icon={<Code size={40} />}
-              title="AI Development"
-              description="Expertise in machine learning, natural language processing, and recommendation systems."
+              title="Machine Learning Development"
+              description="Expertise in machine learning, natural language processing, and deep learning."
             />
             <SkillCard
               icon={<BookOpen size={40} />}
-              title="Data Science"
-              description="Proficient in data analysis, visualization, and big data processing."
+              title="Technical Writing"
+              description="Technical blog writing and instructional content creation for AI/ML topics."
             />
           </div>
         </div>
@@ -128,38 +246,49 @@ const AboutMePage: React.FC = () => {
       <section id="contact" className="py-20">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold text-center mb-12 text-yellow-500 flex items-center justify-center">
-            <Mail className="mr-2" /> Get in Touch
+            <Mail className="mr-2" /> Contact Me
           </h2>
           <div className="flex justify-center space-x-8">
-            <a href="mailto:john@moviesniper.com" className="text-white hover:text-yellow-500 transition duration-300">
-              <Mail size={32} />
+            <a
+              href="mailto:xoraizwaheed@gmail.com"
+              className="flex items-center hover:text-yellow-500 space-x-2"
+            >
+              <Mail />
+              <span>Email</span>
             </a>
-            <a href="https://github.com/johndoe" target="_blank" rel="noopener noreferrer" className="text-white hover:text-yellow-500 transition duration-300">
-              <Github size={32} />
+            <a
+              href="https://github.com/Xoraiz"
+              className="flex items-center hover:text-yellow-500 space-x-2"
+            >
+              <Github />
+              <span>GitHub</span>
             </a>
-            <a href="https://linkedin.com/in/johndoe" target="_blank" rel="noopener noreferrer" className="text-white hover:text-yellow-500 transition duration-300">
-              <Linkedin size={32} />
+            <a
+              href="https://linkedin.com/in/xoraiz"
+              className="flex items-center hover:text-yellow-500 space-x-2"
+            >
+              <Linkedin />
+              <span>LinkedIn</span>
             </a>
           </div>
         </div>
       </section>
-
-      {/* Footer */}
-      <footer className="bg-gray-800 py-6">
-        <div className="container mx-auto px-4 text-center">
-          <p>&copy; 2024 MovieSniper. All rights reserved.</p>
-        </div>
-      </footer>
     </div>
   );
 };
 
-const SkillCard: React.FC<{ icon: React.ReactNode; title: string; description: string }> = ({ icon, title, description }) => (
-  <div className="bg-gray-700 p-6 rounded-lg text-center">
-    <div className="text-yellow-500 mb-4">{icon}</div>
-    <h3 className="text-xl font-semibold mb-2 text-yellow-500">{title}</h3>
-    <p>{description}</p>
-  </div>
-);
+const SkillCard: React.FC<{ icon: React.ReactNode; title: string; description: string }> = ({
+  icon,
+  title,
+  description,
+}) => {
+  return (
+    <div className="text-center">
+      <div className="flex justify-center mb-4">{icon}</div>
+      <h3 className="text-xl font-bold mb-2">{title}</h3>
+      <p>{description}</p>
+    </div>
+  );
+};
 
 export default AboutMePage;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -14,7 +14,6 @@ interface Movie {
 }
 
 interface HeroSectionProps {
-  handleSearch: (e: React.FormEvent) => void;
   searchQuery: string;
   setSearchQuery: React.Dispatch<React.SetStateAction<string>>;
   offset: number;
@@ -22,7 +21,6 @@ interface HeroSectionProps {
 }
 
 const HeroSection: React.FC<HeroSectionProps> = ({
-  handleSearch,
   searchQuery,
   setSearchQuery,
   offset,
@@ -32,36 +30,35 @@ const HeroSection: React.FC<HeroSectionProps> = ({
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchMovies = async () => {
-      setLoading(true);
-      try {
-        const response = await fetch(`https://www.omdbapi.com/?s=${searchQuery}&apikey=9f6b847a`);
-        const data = await response.json();
-        if (data.Search) {
-          setMovies(data.Search.slice(0, 5)); // Display up to 5 results
-        } else {
-          setMovies([]);
-        }
-      } catch (error) {
-        console.error('Error fetching movies:', error);
-      }
-      setLoading(false);
-    };
-
-    const debounceFetch = setTimeout(() => {
-      if (searchQuery.length > 0) {
-        fetchMovies();
+  const fetchMovies = async (query: string) => {
+    setLoading(true);
+    try {
+      const response = await fetch(`https://www.omdbapi.com/?s=${query}&apikey=9f6b847a`);
+      const data = await response.json();
+      if (data.Search) {
+        const cleanedMovies = data.Search.map((movie: Movie) => ({
+          ...movie,
+          Title: movie.Title.replace(/^[^\w\s]+/g, ''), // Remove any extra string ahead of the title
+        }));
+        setMovies(cleanedMovies.slice(0, 4)); // Display up to 4 results
       } else {
         setMovies([]);
       }
-    }, 500); // Debounced search for efficiency
-
-    return () => clearTimeout(debounceFetch);
-  }, [searchQuery]);
+    } catch (error) {
+      console.error('Error fetching movies:', error);
+    }
+    setLoading(false);
+  };
 
   const handleMovieClick = (movie: Movie) => {
     navigate('/movie', { state: { imdbID: movie.imdbID } });
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      fetchMovies(searchQuery.trim());
+    }
   };
 
   return (
@@ -91,7 +88,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({
           <h1 className="text-5xl font-bold mb-6">Discover Your Next Favorite Movie</h1>
           <p className="text-xl mb-8">MovieSniper uses advanced AI to recommend movies tailored just for you.</p>
 
-          <form onSubmit={handleSearch} className="max-w-xl mx-auto relative">
+          <form onSubmit={handleSubmit} className="max-w-xl mx-auto relative">
             <div className="flex rounded-full overflow-hidden bg-white shadow-lg">
               <input
                 type="text"
@@ -118,7 +115,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({
             {/* Search Results */}
             {movies.length > 0 && (
               <div className="absolute w-full mt-4 z-50">
-                <ul className="bg-gray-800 rounded-lg shadow-lg max-h-[70vh] overflow-y-auto">
+                <ul className="bg-gray-800 rounded-lg shadow-lg">
                   {movies.map((movie) => (
                     <li
                       key={movie.imdbID}

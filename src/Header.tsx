@@ -1,20 +1,48 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Sparkles, Sliders, User } from 'lucide-react';
-import Film from './film.png'
+import Film from './film.png';
 
 const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [activeLink, setActiveLink] = useState<string | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
 
+  // Function to scroll to a section
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
+      setIsMenuOpen(false); // Close the menu after click on mobile
     }
+  };
+
+  // Function to close the menu when clicking outside of it
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+    if (isMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      handleLinkClick('')
+    } else {
+      document.removeEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isMenuOpen]);
+
+  // Function to handle link clicks and set active link for yellow glow
+  const handleLinkClick = (id: string) => {
+    setActiveLink(id);
+    scrollToSection(id);
   };
 
   return (
     <header className="relative z-10 container mx-auto px-4 py-3 flex justify-between items-center bg-gray-900 text-white">
-      {/* <div className="text-2xl font-bold text-yellow-500">movieSniper</div> */}
+      {/* Logo */}
       <div className="flex items-center space-x-0">
         <img src={Film} alt="movieSniper logo" className="w-12 h-12" />
         <div className="text-2xl font-bold text-yellow-500">movieSniper</div>
@@ -42,11 +70,9 @@ const Header: React.FC = () => {
           <li className="flex items-center space-x-2">
             <a
               href="#features"
-              onClick={(e) => {
-                e.preventDefault();
-                scrollToSection('features');
-              }}
-              className="flex items-center hover:text-yellow-500 space-x-2 transition-colors duration-300"
+                className={`flex items-center space-x-2 transition-colors duration-300 ${
+                  activeLink === 'features' ? 'text-yellow-500' : 'hover:text-yellow-500'
+                }`}
             >
               <Sparkles className="w-5 h-5" />
               <span>Features</span>
@@ -55,11 +81,9 @@ const Header: React.FC = () => {
           <li className="flex items-center space-x-2">
             <a
               href="#how-it-works"
-              onClick={(e) => {
-                e.preventDefault();
-                scrollToSection('how-it-works');
-              }}
-              className="flex items-center hover:text-yellow-500 space-x-2 transition-colors duration-300"
+                className={`flex items-center space-x-2 transition-colors duration-300 ${
+                  activeLink === 'how-it-works' ? 'text-yellow-500' : 'hover:text-yellow-500'
+                }`}
             >
               <Sliders className="w-5 h-5" />
               <span>How It Works</span>
@@ -68,7 +92,9 @@ const Header: React.FC = () => {
           <li className="flex items-center space-x-2">
             <a
               href="/aboutme"
-              className="flex items-center hover:text-yellow-500 space-x-2 transition-colors duration-300"
+                className={`flex items-center space-x-2 transition-colors duration-300 ${
+                  activeLink === 'aboutme' ? 'text-yellow-500' : 'hover:text-yellow-500'
+                }`}
             >
               <User className="w-5 h-5" />
               <span>About Me</span>
@@ -79,48 +105,51 @@ const Header: React.FC = () => {
 
       {/* Mobile Navigation */}
       <nav
-        className={`md:hidden absolute top-full left-0 w-full bg-gray-900 bg-opacity-80 ${
-          isMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible'
-        } transition-opacity duration-300 ease-in-out`}
+  ref={menuRef}
+  className={`md:hidden absolute top-full left-0 w-full bg-gray-900 bg-opacity-80 ${
+    isMenuOpen ? 'opacity-100 visible z-50' : 'opacity-0 invisible'
+  } transition-opacity duration-300 ease-in-out`}
+>
+  {/* Flex-row for horizontal layout, justify-center for centering */}
+  <ul className="flex flex-row items-center justify-center space-x-6 p-4 whitespace-nowrap">
+    {/* First nav item with additional padding on the left */}
+    <li className="pl-4">
+      <a
+        href="#features"
+        onClick={() => setIsMenuOpen(false)}
+        className="flex items-center space-x-2 hover:text-yellow-500 transition-colors duration-300"
       >
-        <ul className="flex flex-col items-center space-y-4 p-4">
-          <li className="flex items-center space-x-2">
-            <a
-              href="#features"
-              onClick={(e) => {
-                e.preventDefault();
-                scrollToSection('features');
-              }}
-              className="flex items-center hover:text-yellow-500 space-x-2 transition-colors duration-300"
-            >
-              <Sparkles className="w-5 h-5" />
-              <span>Features</span>
-            </a>
-          </li>
-          <li className="flex items-center space-x-2">
-            <a
-              href="#how-it-works"
-              onClick={(e) => {
-                e.preventDefault();
-                scrollToSection('how-it-works');
-              }}
-              className="flex items-center hover:text-yellow-500 space-x-2 transition-colors duration-300"
-            >
-              <Sliders className="w-5 h-5" />
-              <span>How It Works</span>
-            </a>
-          </li>
-          <li className="flex items-center space-x-2">
-            <a
-              href="/aboutme"
-              className="flex items-center hover:text-yellow-500 space-x-2 transition-colors duration-300"
-            >
-              <User className="w-5 h-5" />
-              <span>About Me</span>
-            </a>
-          </li>
-        </ul>
-      </nav>
+        <Sparkles className="w-5 h-5" />
+        <span className="text-base">Features</span>
+      </a>
+    </li>
+
+    {/* Middle nav items with default spacing */}
+    <li>
+      <a
+        href="#how-it-works"
+        onClick={() => setIsMenuOpen(false)}
+        className="flex items-center space-x-2 hover:text-yellow-500 transition-colors duration-300"
+      >
+        <Sliders className="w-5 h-5" />
+        <span className="text-base">How It Works</span>
+      </a>
+    </li>
+
+    {/* Last nav item with additional padding on the right */}
+    <li className="pr-4">
+      <a
+        href="/aboutme"
+        onClick={() => setIsMenuOpen(false)}
+        className="flex items-center space-x-2 hover:text-yellow-500 transition-colors duration-300"
+      >
+        <User className="w-5 h-5" />
+        <span className="text-base">About Me</span>
+      </a>
+    </li>
+  </ul>
+</nav>
+
     </header>
   );
 };

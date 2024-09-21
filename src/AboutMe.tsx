@@ -250,21 +250,21 @@ const AboutMePage: React.FC = () => {
           </h2>
           <div className="flex justify-center space-x-8">
             <a
-              href="mailto:xoraizwaheed@gmail.com"
+              href="mailto:25100055@lums.edu.pk"
               className="flex items-center hover:text-yellow-500 space-x-2"
             >
               <Mail />
               <span>Email</span>
             </a>
             <a
-              href="https://github.com/Xoraiz"
+              href="https://github.com/xoraizw"
               className="flex items-center hover:text-yellow-500 space-x-2"
             >
               <Github />
               <span>GitHub</span>
             </a>
             <a
-              href="https://linkedin.com/in/xoraiz"
+              href="https://www.linkedin.com/in/xoraiz/"
               className="flex items-center hover:text-yellow-500 space-x-2"
             >
               <Linkedin />

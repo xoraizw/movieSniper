@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Film, Sliders, ExternalLink, Sparkles, User, ArrowLeft, Clock, Calendar, Users} from 'lucide-react';
 import FilmLogo from './film.png'
 import { Link } from 'react-router-dom';
-import { useParams } from 'react-router-dom';
+// import { useParams } from 'react-router-dom';
 
 const availableGenres = [
   "Action", "Adventure", "Animation", "Biography", "Comedy", "Crime", "Documentary", "Drama",
@@ -48,7 +48,7 @@ const MovieDetails: React.FC = () => {
   const [recommendations, setRecommendations] = useState<RecommendedMovie[]>([]);
   const [loadingRecommendations, setLoadingRecommendations] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { imdbID } = useParams<{ imdbID: string }>();
+  // const { imdbID } = useParams<{ imdbID: string }>();
 
   
 
@@ -75,26 +75,26 @@ const MovieDetails: React.FC = () => {
     }
   }, [location.state]);
 
-  useEffect(() => {
-    const fetchMovieDetails = async (imdbID: string) => {
-      try {
-        const response = await fetch(`https://www.omdbapi.com/?i=${imdbID}&apikey=9f6b847a`);
-        const data = await response.json();
-        if (data) {
-          setMovie(data);
-          const genres = data.Genre.split(', ').map((genre: string) => genre.trim());
-          setMovieGenres(genres);
-          setRemainingGenres(availableGenres.filter((genre) => !genres.includes(genre)));
-        }
-      } catch (error) {
-        console.error('Error fetching movie details:', error);
-      }
-      setLoading(false);
-    };
-    if (imdbID) {
-      fetchMovieDetails(imdbID);
-    }
-  }, [imdbID]);
+  // useEffect(() => {
+  //   const fetchMovieDetails = async (imdbID: string) => {
+  //     try {
+  //       const response = await fetch(`https://www.omdbapi.com/?i=${imdbID}&apikey=9f6b847a`);
+  //       const data = await response.json();
+  //       if (data) {
+  //         setMovie(data);
+  //         const genres = data.Genre.split(', ').map((genre: string) => genre.trim());
+  //         setMovieGenres(genres);
+  //         setRemainingGenres(availableGenres.filter((genre) => !genres.includes(genre)));
+  //       }
+  //     } catch (error) {
+  //       console.error('Error fetching movie details:', error);
+  //     }
+  //     setLoading(false);
+  //   };
+  //   if (imdbID) {
+  //     fetchMovieDetails(imdbID);
+  //   }
+  // }, [imdbID]);
 
   const handleSliderChange = (genre: string, value: number) => {
     setGenreIntensities(prev => {
@@ -162,8 +162,8 @@ const MovieDetails: React.FC = () => {
   };
 
   const handleMovieClick = (movie: RecommendedMovie) => {
-    navigate(`/movie/${movie.imdbID}`);
-    // navigate('/movie', { state: { imdbID: movie.imdbID } });
+    // navigate(`/movie/${movie.imdbID}`);
+    navigate('/movie', { state: { imdbID: movie.imdbID } });
     window.location.reload();
   };
 

@@ -51,7 +51,8 @@ const HeroSection: React.FC<HeroSectionProps> = ({
   };
 
   const handleMovieClick = (movie: Movie) => {
-    navigate('/movie', { state: { imdbID: movie.imdbID } });
+    navigate(`/movie/${movie.imdbID}`);
+    // navigate('/movie', { state: { imdbID: movie.imdbID } });
   };
 
   const handleSubmit = (e: React.FormEvent) => {

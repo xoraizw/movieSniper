@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Film, Sliders, ExternalLink, Sparkles, User, ArrowLeft, Clock, Calendar, Users} from 'lucide-react';
 import FilmLogo from './film.png'
+import { Link } from 'react-router-dom';
 
 const availableGenres = [
   "Action", "Adventure", "Animation", "Biography", "Comedy", "Crime", "Documentary", "Drama",
@@ -169,17 +170,18 @@ const MovieDetails: React.FC = () => {
         </div>
         
         <nav>
-          <ul className="flex space-x-4">
-            <li>
-              <a
-                href="/aboutme"
-                className="flex items-center hover:text-yellow-500 space-x-2 transition-colors duration-300"
-              >
-                <User className="w-5 h-5" />
-                <span>About Me</span>
-              </a>
-            </li>
-          </ul>
+        <ul className="flex space-x-4">
+  <li>
+    <Link
+      to="/aboutme"
+      className="flex items-center hover:text-yellow-500 space-x-2 transition-colors duration-300"
+    >
+      <User className="w-5 h-5" />
+      <span>About Me</span>
+    </Link>
+  </li>
+</ul>
+
         </nav>
       </div>
     </header>

@@ -251,6 +251,7 @@ const AboutMePage: React.FC = () => {
           <div className="flex justify-center space-x-8">
             <a
               href="mailto:25100055@lums.edu.pk"
+              target="_blank"
               className="flex items-center hover:text-yellow-500 space-x-2"
             >
               <Mail />
@@ -258,6 +259,7 @@ const AboutMePage: React.FC = () => {
             </a>
             <a
               href="https://github.com/xoraizw"
+              target="_blank"
               className="flex items-center hover:text-yellow-500 space-x-2"
             >
               <Github />
@@ -265,6 +267,7 @@ const AboutMePage: React.FC = () => {
             </a>
             <a
               href="https://www.linkedin.com/in/xoraiz/"
+              target="_blank"
               className="flex items-center hover:text-yellow-500 space-x-2"
             >
               <Linkedin />

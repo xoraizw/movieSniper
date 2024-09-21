@@ -9,11 +9,7 @@ const LandingPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [offset, setOffset] = useState(0);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log('Searching for:', searchQuery);
-  };
-
+  
   useEffect(() => {
     const intervalId = setInterval(() => {
       setOffset((prevOffset) => (prevOffset + 1) % 200);
@@ -38,7 +34,6 @@ const LandingPage: React.FC = () => {
     <div className="min-h-screen bg-gray-900 text-white overflow-x-hidden">
       <Header />
       <HeroSection 
-        handleSearch={handleSearch} 
         searchQuery={searchQuery} 
         setSearchQuery={setSearchQuery} 
         offset={offset} 

@@ -91,7 +91,7 @@ const Header: React.FC = () => {
           </li>
           <li className="flex items-center space-x-2">
             <a
-              href="/aboutme"
+              href="aboutme"
                 className={`flex items-center space-x-2 transition-colors duration-300 ${
                   activeLink === 'aboutme' ? 'text-yellow-500' : 'hover:text-yellow-500'
                 }`}
@@ -139,7 +139,7 @@ const Header: React.FC = () => {
     {/* Last nav item with additional padding on the right */}
     <li className="pr-4">
       <a
-        href="/aboutme"
+        href="aboutme"
         onClick={() => setIsMenuOpen(false)}
         className="flex items-center space-x-2 hover:text-yellow-500 transition-colors duration-300"
       >

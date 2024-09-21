@@ -14,13 +14,13 @@ const Header: React.FC = () => {
         setIsMenuOpen(false);
       }
     };
-    
+
     if (isMenuOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     } else {
       document.removeEventListener('mousedown', handleClickOutside);
     }
-    
+
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
@@ -52,35 +52,37 @@ const Header: React.FC = () => {
         <ul className="flex items-center space-x-8">
           <li className="flex items-center space-x-2">
             <a
-              href="#features" // Change this to the appropriate route if needed
+              href="#features"
               className={`flex items-center space-x-2 transition-colors duration-300 ${
                 activeLink === 'features' ? 'text-yellow-500' : 'hover:text-yellow-500'
               }`}
               onClick={() => setActiveLink('features')}
-            ></a>
+            >
               <Sparkles className="w-5 h-5" />
               <span>Features</span>
+            </a>
           </li>
           <li className="flex items-center space-x-2">
             <a
-              href="#how-it-works" // Change this to the appropriate route if needed
+              href="#how-it-works"
               className={`flex items-center space-x-2 transition-colors duration-300 ${
                 activeLink === 'how-it-works' ? 'text-yellow-500' : 'hover:text-yellow-500'
               }`}
               onClick={() => setActiveLink('how-it-works')}
-            ></a>
+            >
               <Sliders className="w-5 h-5" />
               <span>How It Works</span>
+            </a>
           </li>
           <li className="flex items-center space-x-2">
             <Link
-              to="/aboutme" // Use Link for routing
+              to="/aboutme"
               className={`flex items-center space-x-2 transition-colors duration-300 ${
                 activeLink === 'aboutme' ? 'text-yellow-500' : 'hover:text-yellow-500'
               }`}
               onClick={() => {
                 setActiveLink('aboutme');
-                setIsMenuOpen(false); // Close menu on mobile
+                setIsMenuOpen(false);
               }}
             >
               <User className="w-5 h-5" />
@@ -98,25 +100,27 @@ const Header: React.FC = () => {
               href="#features"
               onClick={() => setIsMenuOpen(false)}
               className="flex items-center space-x-2 hover:text-yellow-500 transition-colors duration-300"
-            ></a>
+            >
               <Sparkles className="w-5 h-5" />
               <span className="text-base">Features</span>
+            </a>
           </li>
           <li>
             <a
               href="#how-it-works"
               onClick={() => setIsMenuOpen(false)}
               className="flex items-center space-x-2 hover:text-yellow-500 transition-colors duration-300"
-            ></a>
+            >
               <Sliders className="w-5 h-5" />
               <span className="text-base">How It Works</span>
+            </a>
           </li>
           <li className="pr-4">
             <Link
               to="/aboutme"
               onClick={() => {
                 setIsMenuOpen(false);
-                setActiveLink('aboutme'); // Set active link on click
+                setActiveLink('aboutme');
               }}
               className="flex items-center space-x-2 hover:text-yellow-500 transition-colors duration-300"
             >

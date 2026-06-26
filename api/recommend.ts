@@ -1,8 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-const SUPABASE_URL = process.env.SUPABASE_URL!;
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY!;
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY!;
+const SUPABASE_URL = process.env.SUPABASE_URL ?? '';
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY ?? '';
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY ?? '';
 const OMDB_API_KEY = process.env.OMDB_API_KEY ?? '9f6b847a';
 const EMBED_MODEL = 'text-embedding-3-small';
 
@@ -105,6 +105,12 @@ async function fetchOmdbFallback(title: string) {
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY || !OPENAI_API_KEY) {
+    return res.status(500).json({
+      error: 'Server misconfigured: missing SUPABASE_URL, SUPABASE_SERVICE_KEY, or OPENAI_API_KEY env vars.',
+    });
+  }
 
   const { title, genre_intensities, top_n = 10 } = req.body as {
     title: string;

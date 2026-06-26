@@ -31,7 +31,7 @@ const LandingPage: React.FC = () => {
   
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white overflow-x-hidden">
+    <div className="min-h-screen bg-film-bg text-film-text overflow-x-hidden">
       <Header />
       <HeroSection 
         searchQuery={searchQuery} 

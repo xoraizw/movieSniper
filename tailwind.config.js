@@ -1,12 +1,10 @@
+import animate from "tailwindcss-animate";
+
 /** @type {import('tailwindcss').Config} */
-module.exports = {
+export default {
   darkMode: ["class"],
   content: [
     "./src/**/*.{js,jsx,ts,tsx}",
-    // './pages/**/*.{ts,tsx}',
-    // './components/**/*.{ts,tsx}',
-    // './app/**/*.{ts,tsx}',
-    // './src/**/*.{ts,tsx}',
   ],
   prefix: "",
   theme: {
@@ -18,7 +16,21 @@ module.exports = {
       },
     },
     extend: {
+      fontFamily: {
+        display: ['"Playfair Display"', 'Georgia', 'serif'],
+        body: ['"DM Sans"', '-apple-system', 'sans-serif'],
+      },
       colors: {
+        film: {
+          bg: '#0A0908',
+          surface: '#131211',
+          raised: '#1A1917',
+          gold: '#C4963A',
+          'gold-light': '#E2B558',
+          cream: '#EDE7DC',
+          text: '#B0A69C',
+          muted: '#4D4743',
+        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
@@ -74,5 +86,5 @@ module.exports = {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [animate],
 }

@@ -151,12 +151,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const rawResults = await fetchFromSupabase(embedding, title, top_n);
     const reranked = rerank(rawResults, genre_intensities, top_n);
 
+    const TMDB_BASE = 'https://image.tmdb.org/t/p/w500';
     const output = reranked.map((m) => ({
       title: m.title,
       genres: m.genres,
       genre_intensities: m.genre_intensities,
       imdb_id: m.imdb_id,
-      poster_path: m.poster_path,
+      poster_path: m.poster_path
+        ? m.poster_path.startsWith('http')
+          ? m.poster_path
+          : `${TMDB_BASE}${m.poster_path}`
+        : '',
       release_date: m.release_date,
       runtime: m.runtime,
     }));

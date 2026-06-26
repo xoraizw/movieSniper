@@ -78,7 +78,7 @@ function rerank(
         }
       }
       const normalizedGenre = count > 0 ? genreScore / (count * 9) : 0; // max per pair is 3*3=9
-      const combined = 0.7 * (movie.similarity ?? 0) + 0.3 * normalizedGenre;
+      const combined = 0.5 * (movie.similarity ?? 0) + 0.5 * normalizedGenre;
       return { ...movie, combined };
     })
     .sort((a, b) => b.combined - a.combined)
@@ -139,12 +139,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const m = titleRows[0];
       embeddingText = buildEmbeddingText(m.title, m.genres, m.summary);
     } else {
-      // Fallback: fetch from OMDB
+      // Fallback: fetch from OMDB then cache in Supabase
       const omdb = await fetchOmdbFallback(title);
       if (!omdb) {
         return res.status(404).json({ error: `Movie "${title}" not found` });
       }
       embeddingText = buildEmbeddingText(omdb.title, omdb.genres, omdb.plot);
+
+      // Generate embedding for the new movie and insert into Supabase (fire-and-forget)
+      getEmbedding(embeddingText).then((newEmbedding) => {
+        fetch(`${SUPABASE_URL}/rest/v1/movies`, {
+          method: 'POST',
+          headers: {
+            apikey: SUPABASE_SERVICE_KEY,
+            Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
+            'Content-Type': 'application/json',
+            Prefer: 'resolution=merge-duplicates',
+          },
+          body: JSON.stringify([{
+            imdb_id: omdb.imdb_id,
+            title: omdb.title,
+            release_date: omdb.release_date,
+            runtime: omdb.runtime,
+            poster_path: omdb.poster_path,
+            genres: omdb.genres,
+            summary: omdb.plot,
+            description: omdb.plot,
+            genre_intensities: {},
+            embedding: newEmbedding,
+          }]),
+        }).catch(() => {}); // best-effort, don't block the response
+      }).catch(() => {});
     }
 
     const embedding = await getEmbedding(embeddingText);

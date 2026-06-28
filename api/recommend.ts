@@ -31,12 +31,40 @@ async function getEmbedding(text: string): Promise<number[]> {
   return data.data[0].embedding as number[];
 }
 
-function buildEmbeddingText(title: string, genres: string, plot: string): string {
-  return [
-    `Title: ${title}`,
-    `Genres: ${genres}`,
-    `Summary: ${plot}`,
-  ].join(' | ');
+const ALL_GENRES_LIST = [
+  'Action', 'Adventure', 'Animation', 'Biography', 'Comedy', 'Crime',
+  'Documentary', 'Drama', 'Family', 'Fantasy', 'History', 'Horror',
+  'Musical', 'Mystery', 'Romance', 'Science Fiction', 'Sport',
+  'Thriller', 'War', 'Western',
+];
+
+function buildEmbeddingText(
+  title: string,
+  genres: string,
+  plot: string,
+  genreIntensities: GenreIntensities = {},
+  keywords = '',
+  tagline = '',
+): string {
+  const giParts = ALL_GENRES_LIST
+    .filter(g => genreIntensities[g] !== undefined && genreIntensities[g] !== 0)
+    .map(g => `${g}: ${genreIntensities[g] > 0 ? '+' : ''}${genreIntensities[g]}`);
+  const giText = giParts.length > 0 ? giParts.join(', ') : genres;
+
+  const parts: string[] = [];
+
+  // genre_intensities ~30% — repeat 3x
+  if (giText) parts.push(...Array(3).fill(`Genre profile: ${giText}`));
+  // summary ~25% — repeat 3x
+  if (plot) parts.push(...Array(3).fill(`Summary: ${plot}`));
+  // title ~10%
+  if (title) parts.push(`Title: ${title}`);
+  // keywords ~5%
+  if (keywords) parts.push(`Keywords: ${keywords}`);
+  // tagline ~5%
+  if (tagline) parts.push(`Tagline: ${tagline}`);
+
+  return parts.join(' | ');
 }
 
 async function fetchFromSupabase(embedding: number[], excludeTitle: string, topN: number) {
@@ -123,7 +151,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     // Try to find movie in Supabase first (cheap title lookup)
     const titleLookup = await fetch(
-      `${SUPABASE_URL}/rest/v1/movies?select=title,genres,summary,genre_intensities&title=ilike.${encodeURIComponent(title)}&limit=1`,
+      `${SUPABASE_URL}/rest/v1/movies?select=title,genres,summary,description,keywords,tagline,genre_intensities&title=ilike.${encodeURIComponent(title)}&limit=1`,
       {
         headers: {
           apikey: SUPABASE_SERVICE_KEY,
@@ -137,14 +165,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (titleRows.length > 0) {
       const m = titleRows[0];
-      embeddingText = buildEmbeddingText(m.title, m.genres, m.summary);
+      embeddingText = buildEmbeddingText(m.title, m.genres, m.summary, m.genre_intensities ?? {}, m.keywords ?? '', m.tagline ?? '');
     } else {
       // Fallback: fetch from OMDB then cache in Supabase
       const omdb = await fetchOmdbFallback(title);
       if (!omdb) {
         return res.status(404).json({ error: `Movie "${title}" not found` });
       }
-      embeddingText = buildEmbeddingText(omdb.title, omdb.genres, omdb.plot);
+      embeddingText = buildEmbeddingText(omdb.title, omdb.genres, omdb.plot, {}, '', '');
 
       // Generate embedding for the new movie and insert into Supabase (fire-and-forget)
       getEmbedding(embeddingText).then((newEmbedding) => {

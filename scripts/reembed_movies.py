@@ -22,6 +22,7 @@ import sys
 import time
 import json
 import requests
+from typing import Any
 
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://jayxstotsvlseemmdtxa.supabase.co")
@@ -110,18 +111,32 @@ def fetch_page(offset: int) -> list[dict]:
     return r.json()
 
 
-def update_embedding(movie_id: int, embedding: list[float]):
-    r = requests.patch(
-        f"{SUPABASE_URL}/rest/v1/movies?id=eq.{movie_id}",
-        headers={
-            "apikey": SUPABASE_SERVICE_KEY,
-            "Authorization": f"Bearer {SUPABASE_SERVICE_KEY}",
-            "Content-Type": "application/json",
-        },
-        json={"embedding": embedding},
-        timeout=30,
-    )
-    return r.status_code in (200, 204)
+def batch_upsert_embeddings(rows: list[dict], retries: int = 3) -> bool:
+    """Upsert a batch of {id, embedding} rows via Supabase upsert."""
+    for attempt in range(retries):
+        try:
+            r = requests.post(
+                f"{SUPABASE_URL}/rest/v1/movies",
+                headers={
+                    "apikey": SUPABASE_SERVICE_KEY,
+                    "Authorization": f"Bearer {SUPABASE_SERVICE_KEY}",
+                    "Content-Type": "application/json",
+                    "Prefer": "resolution=merge-duplicates",
+                },
+                json=rows,
+                timeout=60,
+            )
+            if r.status_code in (200, 201):
+                return True
+            print(f"  Upsert error {r.status_code}: {r.text[:200]}")
+        except requests.exceptions.Timeout:
+            wait = 10 * (attempt + 1)
+            print(f"  Timeout on upsert, retrying in {wait}s...")
+            time.sleep(wait)
+        except Exception as e:
+            print(f"  Upsert exception: {e}")
+            time.sleep(5)
+    return False
 
 
 def main():
@@ -148,22 +163,40 @@ def main():
     total = len(all_movies)
     print(f"Total movies to re-embed: {total}")
 
-    updated = 0
-    for start in range(0, total, BATCH_SIZE):
-        batch = all_movies[start:start + BATCH_SIZE]
+    progress_file = "./scripts/reembed_progress.json"
+    done_ids: set = set()
+    if os.path.exists(progress_file):
+        with open(progress_file) as f:
+            done_ids = set(json.load(f))
+        print(f"Resuming — {len(done_ids)} already done")
+
+    remaining = [m for m in all_movies if m["id"] not in done_ids]
+    print(f"Remaining to embed: {len(remaining)}")
+
+    updated = len(done_ids)
+    for start in range(0, len(remaining), BATCH_SIZE):
+        batch = remaining[start:start + BATCH_SIZE]
         texts = [build_weighted_embedding_text(m) for m in batch]
 
-        print(f"Embedding batch {start}–{start + len(batch) - 1} / {total}...")
+        print(f"Embedding batch {start}–{start + len(batch) - 1} / {len(remaining)}...")
         embeddings = get_embeddings(texts)
 
-        for movie, emb in zip(batch, embeddings):
-            if update_embedding(movie["id"], emb):
-                updated += 1
-            else:
-                print(f"  Failed to update: {movie['title']}")
+        upsert_rows = [
+            {"id": movie["id"], "embedding": emb}
+            for movie, emb in zip(batch, embeddings)
+        ]
+
+        if batch_upsert_embeddings(upsert_rows):
+            updated += len(batch)
+            for movie in batch:
+                done_ids.add(movie["id"])
+            with open(progress_file, "w") as f:
+                json.dump(list(done_ids), f)
+        else:
+            print(f"  Batch failed, will retry on next run")
 
         print(f"  Updated {updated}/{total} so far")
-        time.sleep(0.3)
+        time.sleep(0.5)
 
     print(f"\nDone. Re-embedded {updated}/{total} movies.")
 

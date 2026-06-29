@@ -195,6 +195,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             description: omdb.plot,
             genre_intensities: {},
             embedding: newEmbedding,
+            enriched: false,
           }]),
         }).catch(() => {}); // best-effort, don't block the response
       }).catch(() => {});

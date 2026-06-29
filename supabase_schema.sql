@@ -28,6 +28,14 @@ create index if not exists movies_embedding_idx
 -- Index for title lookup
 create index if not exists movies_title_idx on movies (lower(title));
 
+-- Function to update only the embedding column for a movie
+create or replace function update_movie_embedding(movie_id bigint, new_embedding vector(1536))
+returns void language plpgsql as $$
+begin
+  update movies set embedding = new_embedding where id = movie_id;
+end;
+$$;
+
 -- Function for similarity search
 create or replace function match_movies(
   query_embedding vector(1536),

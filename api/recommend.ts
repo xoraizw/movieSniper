@@ -41,10 +41,12 @@ const ALL_GENRES_LIST = [
 function buildEmbeddingText(
   title: string,
   genres: string,
-  plot: string,
+  summary: string,
   genreIntensities: GenreIntensities = {},
   keywords = '',
   tagline = '',
+  description = '',
+  reviews = '',
 ): string {
   const giParts = ALL_GENRES_LIST
     .filter(g => genreIntensities[g] !== undefined && genreIntensities[g] !== 0)
@@ -54,15 +56,19 @@ function buildEmbeddingText(
   const parts: string[] = [];
 
   // genre_intensities ~30% — repeat 3x
-  if (giText) parts.push(...Array(3).fill(`Genre profile: ${giText}`));
+  if (giText)                              parts.push(...Array(3).fill(`Genre profile: ${giText}`));
   // summary ~25% — repeat 3x
-  if (plot) parts.push(...Array(3).fill(`Summary: ${plot}`));
+  if (summary)                             parts.push(...Array(3).fill(`Summary: ${summary}`));
+  // description ~20% — repeat 2x
+  if (description && description !== summary) parts.push(...Array(2).fill(`Description: ${description}`));
   // title ~10%
-  if (title) parts.push(`Title: ${title}`);
+  if (title)                               parts.push(`Title: ${title}`);
+  // reviews ~10%
+  if (reviews)                             parts.push(`Reviews: ${reviews.slice(0, 600)}`);
   // keywords ~5%
-  if (keywords) parts.push(`Keywords: ${keywords}`);
+  if (keywords)                            parts.push(`Keywords: ${keywords}`);
   // tagline ~5%
-  if (tagline) parts.push(`Tagline: ${tagline}`);
+  if (tagline)                             parts.push(`Tagline: ${tagline}`);
 
   return parts.join(' | ');
 }
@@ -115,7 +121,7 @@ function rerank(
 
 async function fetchOmdbFallback(title: string) {
   const res = await fetch(
-    `https://www.omdbapi.com/?t=${encodeURIComponent(title)}&apikey=${OMDB_API_KEY}`
+    `https://www.omdbapi.com/?t=${encodeURIComponent(title)}&plot=full&apikey=${OMDB_API_KEY}`
   );
   if (!res.ok) return null;
   const data = await res.json();
@@ -128,7 +134,65 @@ async function fetchOmdbFallback(title: string) {
     poster_path: data.Poster,
     release_date: data.Released,
     runtime: data.Runtime,
+    keywords: data.Keywords ?? '',
+    tagline: data.Tagline ?? '',
   };
+}
+
+async function fetchImdbReviews(imdbId: string): Promise<string> {
+  try {
+    const res = await fetch(`https://www.imdb.com/title/${imdbId}/reviews`, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36',
+      },
+    });
+    const html = await res.text();
+    // Extract review text between show-more__control divs
+    const matches = [...html.matchAll(/class="text show-more__control"[^>]*>([\s\S]*?)<\/div>/g)];
+    const reviews = matches.slice(0, 3).map(m =>
+      m[1].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim()
+    );
+    return reviews.join('\n');
+  } catch {
+    return '';
+  }
+}
+
+async function generateGenreIntensities(
+  title: string, genres: string, plot: string, keywords: string, tagline: string
+): Promise<GenreIntensities> {
+  const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY ?? '';
+  if (!OPENROUTER_KEY) return {};
+  try {
+    const prompt = `You are the average movie viewer. Analyze the intensity of each genre in this list for the movie below: ${ALL_GENRES_LIST.join(', ')}
+Rating scheme: -3 (very low) to +3 (extreme), 0 = neutral.
+title: ${title}
+genres: ${genres}
+tagline: ${tagline}
+keywords: ${keywords}
+summary: ${plot}
+Output ONLY a JSON object with every genre as keys. Example: {"Action": 1, "Drama": 2, "Comedy": -1}
+No explanations, no extra text.`;
+
+    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${OPENROUTER_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'meta-llama/llama-3.1-8b-instruct:free',
+        messages: [
+          { role: 'system', content: 'You are a movie genre rating assistant. Output only valid JSON.' },
+          { role: 'user', content: prompt },
+        ],
+      }),
+    });
+    const data = await res.json();
+    if (!data.choices) return {};
+    const content = data.choices[0].message.content.trim()
+      .replace(/```json\n?/g, '').replace(/```/g, '').trim();
+    return JSON.parse(content) as GenreIntensities;
+  } catch {
+    return {};
+  }
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -151,7 +215,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     // Try to find movie in Supabase first (cheap title lookup)
     const titleLookup = await fetch(
-      `${SUPABASE_URL}/rest/v1/movies?select=title,genres,summary,description,keywords,tagline,genre_intensities&title=ilike.${encodeURIComponent(title)}&limit=1`,
+      `${SUPABASE_URL}/rest/v1/movies?select=title,genres,summary,description,reviews,keywords,tagline,genre_intensities&title=ilike.${encodeURIComponent(title)}&limit=1`,
       {
         headers: {
           apikey: SUPABASE_SERVICE_KEY,
@@ -165,16 +229,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (titleRows.length > 0) {
       const m = titleRows[0];
-      embeddingText = buildEmbeddingText(m.title, m.genres, m.summary, m.genre_intensities ?? {}, m.keywords ?? '', m.tagline ?? '');
+      embeddingText = buildEmbeddingText(m.title, m.genres, m.summary, m.genre_intensities ?? {}, m.keywords ?? '', m.tagline ?? '', m.description ?? '', m.reviews ?? '');
     } else {
-      // Fallback: fetch from OMDB then cache in Supabase
+      // Unknown movie — fetch from OMDB, enrich fully, then store
       const omdb = await fetchOmdbFallback(title);
       if (!omdb) {
         return res.status(404).json({ error: `Movie "${title}" not found` });
       }
-      embeddingText = buildEmbeddingText(omdb.title, omdb.genres, omdb.plot, {}, '', '');
 
-      // Generate embedding for the new movie and insert into Supabase (fire-and-forget)
+      // Fetch reviews + genre intensities in parallel while we have OMDB data
+      const [reviews, genreIntensities] = await Promise.all([
+        fetchImdbReviews(omdb.imdb_id),
+        generateGenreIntensities(omdb.title, omdb.genres, omdb.plot, omdb.keywords ?? '', omdb.tagline ?? ''),
+      ]);
+
+      // Build fully weighted embedding
+      embeddingText = buildEmbeddingText(
+        omdb.title, omdb.genres, omdb.plot,
+        genreIntensities, omdb.keywords ?? '', omdb.tagline ?? '',
+        omdb.plot,   // description = full plot from OMDB
+        reviews,
+      );
+
+      // Insert fully enriched movie into Supabase (fire-and-forget — don't block response)
       getEmbedding(embeddingText).then((newEmbedding) => {
         fetch(`${SUPABASE_URL}/rest/v1/movies`, {
           method: 'POST',
@@ -193,11 +270,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             genres: omdb.genres,
             summary: omdb.plot,
             description: omdb.plot,
-            genre_intensities: {},
+            keywords: omdb.keywords ?? '',
+            tagline: omdb.tagline ?? '',
+            reviews,
+            genre_intensities: genreIntensities,
             embedding: newEmbedding,
-            enriched: false,
+            enriched: true,
           }]),
-        }).catch(() => {}); // best-effort, don't block the response
+        }).catch(() => {});
       }).catch(() => {});
     }
 

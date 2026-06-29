@@ -243,42 +243,59 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         generateGenreIntensities(omdb.title, omdb.genres, omdb.plot, omdb.keywords ?? '', omdb.tagline ?? ''),
       ]);
 
-      // Build fully weighted embedding
+      // Build fully weighted embedding text
       embeddingText = buildEmbeddingText(
         omdb.title, omdb.genres, omdb.plot,
         genreIntensities, omdb.keywords ?? '', omdb.tagline ?? '',
-        omdb.plot,   // description = full plot from OMDB
-        reviews,
+        omdb.plot, reviews,
       );
 
-      // Insert fully enriched movie into Supabase (fire-and-forget — don't block response)
-      getEmbedding(embeddingText).then((newEmbedding) => {
-        fetch(`${SUPABASE_URL}/rest/v1/movies`, {
-          method: 'POST',
-          headers: {
-            apikey: SUPABASE_SERVICE_KEY,
-            Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
-            'Content-Type': 'application/json',
-            Prefer: 'resolution=merge-duplicates',
-          },
-          body: JSON.stringify([{
-            imdb_id: omdb.imdb_id,
-            title: omdb.title,
-            release_date: omdb.release_date,
-            runtime: omdb.runtime,
-            poster_path: omdb.poster_path,
-            genres: omdb.genres,
-            summary: omdb.plot,
-            description: omdb.plot,
-            keywords: omdb.keywords ?? '',
-            tagline: omdb.tagline ?? '',
-            reviews,
-            genre_intensities: genreIntensities,
-            embedding: newEmbedding,
-            enriched: true,
-          }]),
-        }).catch(() => {});
-      }).catch(() => {});
+      // Generate embedding once — reuse for both search and storage
+      const newEmbedding = await getEmbedding(embeddingText);
+
+      // Insert fully enriched movie — await so it's saved before returning results
+      await fetch(`${SUPABASE_URL}/rest/v1/movies`, {
+        method: 'POST',
+        headers: {
+          apikey: SUPABASE_SERVICE_KEY,
+          Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
+          'Content-Type': 'application/json',
+          Prefer: 'resolution=merge-duplicates',
+        },
+        body: JSON.stringify([{
+          imdb_id: omdb.imdb_id,
+          title: omdb.title,
+          release_date: omdb.release_date,
+          runtime: omdb.runtime,
+          poster_path: omdb.poster_path,
+          genres: omdb.genres,
+          summary: omdb.plot,
+          description: omdb.plot,
+          keywords: omdb.keywords ?? '',
+          tagline: omdb.tagline ?? '',
+          reviews,
+          genre_intensities: genreIntensities,
+          embedding: newEmbedding,
+          enriched: true,
+        }]),
+      }).catch(() => {}); // non-fatal if insert fails
+
+      // Use the already-generated embedding directly for search
+      const rawResults = await fetchFromSupabase(newEmbedding, title, top_n);
+      const reranked = rerank(rawResults, genre_intensities, top_n);
+      const TMDB_BASE = 'https://image.tmdb.org/t/p/w500';
+      const output = reranked.map((m) => ({
+        title: m.title,
+        genres: m.genres,
+        genre_intensities: m.genre_intensities,
+        imdb_id: m.imdb_id,
+        poster_path: m.poster_path
+          ? m.poster_path.startsWith('http') ? m.poster_path : `${TMDB_BASE}${m.poster_path}`
+          : '',
+        release_date: m.release_date,
+        runtime: m.runtime,
+      }));
+      return res.status(200).json(output);
     }
 
     const embedding = await getEmbedding(embeddingText);

@@ -1,6 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Analytics } from '@vercel/analytics/react';
 import App from './App.tsx'
 import Movie from './Movie.tsx'
 import AboutMe from './AboutMe.tsx';
@@ -15,5 +16,6 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           <Route path="/aboutme" element={<AboutMe />} />
         </Routes>
       </BrowserRouter>
+    <Analytics />
   </React.StrictMode>,
 )

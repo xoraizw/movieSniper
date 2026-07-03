@@ -57,6 +57,7 @@ returns table (
 language plpgsql
 as $$
 begin
+  set local ivfflat.probes = 20;
   return query
   select
     m.id,
@@ -71,6 +72,7 @@ begin
   from movies m
   where lower(m.title) != lower(exclude_title)
     and m.embedding is not null
+    and m.enriched = true
   order by m.embedding <=> query_embedding
   limit match_count;
 end;

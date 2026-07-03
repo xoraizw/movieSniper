@@ -84,7 +84,7 @@ async function fetchFromSupabase(embedding: number[], excludeTitle: string, topN
     body: JSON.stringify({
       query_embedding: embedding,
       genre_weights: {},
-      match_count: topN + 5,
+      match_count: topN + 20,
       exclude_title: excludeTitle,
     }),
   });
